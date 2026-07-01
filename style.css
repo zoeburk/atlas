@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#FAF9F7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Atlas" />
+  <title>Atlas</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Construyendo la vida que quiero</p>
+        <h1>Atlas</h1>
+      </div>
+      <button id="backupBtn" class="ghost">Backup</button>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="label">Balance total</p>
+        <p id="balance" class="money">0 €</p>
+      </div>
+      <div class="metrics">
+        <div><span>Ingresos</span><strong id="income">0 €</strong></div>
+        <div><span>Gastos</span><strong id="expenses">0 €</strong></div>
+        <div><span>Ahorro</span><strong id="savings">0 €</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Objetivos</h2>
+        <p>Tu dinero con dirección.</p>
+      </div>
+      <div class="goal">
+        <div class="goal-head"><span>Proyecto de espacio</span><strong id="spacePct">0%</strong></div>
+        <div class="bar"><div id="spaceBar"></div></div>
+        <div class="goal-foot"><span id="spaceSaved">0 €</span><span>meta <input id="spaceGoal" type="number" value="12000"></span></div>
+      </div>
+      <div class="goal">
+        <div class="goal-head"><span>Viajes y conciertos</span><strong id="travelPct">0%</strong></div>
+        <div class="bar"><div id="travelBar"></div></div>
+        <div class="goal-foot"><span id="travelSaved">0 €</span><span>meta <input id="travelGoal" type="number" value="2500"></span></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="section-title">
+          <h2>Nuevo movimiento</h2>
+          <p>Cargá algo rápido o importá CSV.</p>
+        </div>
+        <form id="txForm" class="form">
+          <input id="date" type="date" required />
+          <input id="description" placeholder="Concepto" required />
+          <input id="amount" type="number" step="0.01" placeholder="Importe (+ ingreso / - gasto)" required />
+          <select id="category">
+            <option>Supermercado</option><option>Transporte</option><option>Cafés y restaurantes</option><option>Libros</option><option>Ropa</option><option>Belleza</option><option>Suscripciones</option><option>Viajes y conciertos</option><option>Proyecto de espacio</option><option>Otros</option>
+          </select>
+          <button type="submit">Añadir</button>
+        </form>
+        <label class="fileLabel">Importar CSV<input id="csvInput" type="file" accept=".csv,text/csv"></label>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <h2>Categorías</h2>
+          <p>En qué se fue la plata.</p>
+        </div>
+        <div id="categories" class="categories"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Movimientos</h2>
+        <button id="clearBtn" class="ghost danger">Borrar todo</button>
+      </div>
+      <div id="transactions" class="transactions"></div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

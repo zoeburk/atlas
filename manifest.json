@@ -1,0 +1,23 @@
+const money = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n||0);
+const storeKey='atlas-data-v1';
+let data=JSON.parse(localStorage.getItem(storeKey)||'{"transactions":[],"goals":{"space":12000,"travel":2500}}');
+const rules=[['mercadona','Supermercado'],['carrefour','Supermercado'],['lidl','Supermercado'],['renfe','Transporte'],['uber','Transporte'],['spotify','Suscripciones'],['netflix','Suscripciones'],['casa del libro','Libros'],['fnac','Libros'],['jd','Ropa'],['zara','Ropa'],['primor','Belleza'],['sephora','Belleza'],['ticketmaster','Viajes y conciertos'],['ryanair','Viajes y conciertos'],['vueling','Viajes y conciertos']];
+function save(){localStorage.setItem(storeKey,JSON.stringify(data));render()}
+function categorize(desc){const d=String(desc).toLowerCase();for(const [k,c] of rules){if(d.includes(k))return c}return 'Otros'}
+function render(){
+ const tx=data.transactions; const income=tx.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0); const expenses=Math.abs(tx.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0)); const savings=income-expenses;
+ document.getElementById('income').textContent=money(income);document.getElementById('expenses').textContent=money(expenses);document.getElementById('savings').textContent=money(savings);document.getElementById('balance').textContent=money(savings);
+ data.goals.space=Number(document.getElementById('spaceGoal').value||data.goals.space);data.goals.travel=Number(document.getElementById('travelGoal').value||data.goals.travel);
+ const space=tx.filter(t=>t.category==='Proyecto de espacio').reduce((s,t)=>s+Math.abs(t.amount),0); const travel=tx.filter(t=>t.category==='Viajes y conciertos').reduce((s,t)=>s+Math.abs(t.amount),0);
+ const sp=Math.min(100,Math.round(space/data.goals.space*100)||0), tr=Math.min(100,Math.round(travel/data.goals.travel*100)||0);
+ spacePct.textContent=sp+'%';travelPct.textContent=tr+'%';spaceBar.style.width=sp+'%';travelBar.style.width=tr+'%';spaceSaved.textContent=money(space);travelSaved.textContent=money(travel);
+ const cats={};tx.filter(t=>t.amount<0).forEach(t=>cats[t.category]=(cats[t.category]||0)+Math.abs(t.amount));
+ categories.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="cat"><span>${c}</span><strong>${money(v)}</strong></div>`).join('')||'<p class="label">Todavía no hay gastos.</p>';
+ transactions.innerHTML=[...tx].reverse().map(t=>`<div class="tx"><div><p>${t.description}</p><small>${t.date} · ${t.category}</small></div><strong class="${t.amount<0?'negative':'positive'}">${money(t.amount)}</strong></div>`).join('')||'<p class="label">Añadí tu primer movimiento.</p>';
+}
+date.valueAsDate=new Date(); spaceGoal.value=data.goals.space; travelGoal.value=data.goals.travel;
+txForm.addEventListener('submit',e=>{e.preventDefault();data.transactions.push({date:date.value,description:description.value,amount:Number(amount.value),category:category.value});txForm.reset();date.valueAsDate=new Date();save()});
+clearBtn.addEventListener('click',()=>{if(confirm('¿Borrar todos los movimientos?')){data.transactions=[];save()}});
+backupBtn.addEventListener('click',()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='atlas-backup.json';a.click()});
+csvInput.addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;const text=await file.text();const lines=text.split(/\r?\n/).filter(Boolean);for(const line of lines.slice(1)){const parts=line.split(/;|,/).map(x=>x.trim().replace(/^"|"$/g,''));let date=parts[0],desc=parts[1],amt=parts.find(p=>/^-?\d+[,.]?\d*$/.test(p));if(date&&desc&&amt){data.transactions.push({date,description:desc,amount:Number(amt.replace(',','.')),category:categorize(desc)})}}save();e.target.value=''});
+spaceGoal.addEventListener('change',save);travelGoal.addEventListener('change',save);render();
