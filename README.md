@@ -1,1 +1,5 @@
-{"name":"Atlas","short_name":"Atlas","start_url":"/","display":"standalone","background_color":"#FAF9F7","theme_color":"#FAF9F7","icons":[]}
+# Atlas
+
+Control sin complejidad.
+
+App personal para registrar movimientos, ver disponible mensual y seguir objetivos de ahorro.

@@ -1,1 +1,97 @@
-:root{--bg:#FAF9F7;--card:#fff;--text:#222;--muted:#76736e;--line:#e7e2da;--olive:#7A8A72;--terra:#B8795A;--soft:#f1eee8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}.shell{width:min(980px,100%);margin:0 auto;padding:32px 18px 56px}.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:28px}.eyebrow{margin:0 0 8px;color:var(--muted);font-size:13px;letter-spacing:.02em}h1{font-size:42px;line-height:1;margin:0;font-weight:700;letter-spacing:-.04em}h2{font-size:18px;margin:0;font-weight:650;letter-spacing:-.02em}.hero,.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px;margin-bottom:16px}.hero{display:grid;grid-template-columns:1fr 1.4fr;gap:20px}.label{margin:0 0 8px;color:var(--muted);font-size:14px}.money{font-size:46px;letter-spacing:-.05em;margin:0;font-weight:720}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metrics div{background:var(--soft);border-radius:18px;padding:16px}.metrics span,.goal-foot,.section-title p{display:block;color:var(--muted);font-size:13px}.metrics strong{display:block;margin-top:8px;font-size:22px;letter-spacing:-.03em}.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.section-title p{margin:4px 0 0}.goal{padding:16px 0;border-top:1px solid var(--line)}.goal:first-of-type{border-top:0}.goal-head,.goal-foot{display:flex;justify-content:space-between;align-items:center;gap:12px}.goal-head span{font-weight:620}.bar{height:10px;background:var(--soft);border-radius:999px;overflow:hidden;margin:12px 0}.bar div{height:100%;background:var(--olive);width:0}.goal:nth-child(3) .bar div{background:var(--terra)}input,select,button{font:inherit}input,select{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 13px;color:var(--text)}.goal-foot input{width:90px;padding:5px 8px;border-radius:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.form{display:grid;gap:10px}button,.fileLabel{border:0;border-radius:14px;background:var(--text);color:#fff;padding:12px 14px;cursor:pointer;text-align:center}.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}.danger{color:#9b3b2d}.fileLabel{display:block;margin-top:10px;background:var(--olive)}.fileLabel input{display:none}.categories{display:grid;gap:10px}.cat{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:10px 0}.transactions{display:grid;gap:8px}.tx{display:grid;grid-template-columns:1fr auto;gap:8px;padding:14px 0;border-bottom:1px solid var(--line)}.tx p{margin:0}.tx small{color:var(--muted)}.tx strong.negative{color:#9b3b2d}.tx strong.positive{color:var(--olive)}@media(max-width:760px){.hero,.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.money{font-size:38px}h1{font-size:38px}}
+const STORAGE_KEY = 'atlas_movements_v1';
+const CONFIG_KEY = 'atlas_config_v1';
+
+const defaultConfig = {
+  goals: {
+    space: { target: 6000, saved: 0 },
+    travel: { target: 3000, saved: 0 }
+  }
+};
+
+let movements = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let config = JSON.parse(localStorage.getItem(CONFIG_KEY) || JSON.stringify(defaultConfig));
+
+const euro = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+const monthLabel = document.getElementById('monthLabel');
+const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date());
+monthLabel.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(movements));
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+}
+
+function currentMonthMovements(){
+  const now = new Date();
+  return movements.filter(m => {
+    const d = new Date(m.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+}
+
+function render(){
+  const monthMoves = currentMonthMovements();
+  const income = monthMoves.filter(m => m.type === 'income').reduce((s,m) => s + m.amount, 0);
+  const expenses = monthMoves.filter(m => m.type === 'expense').reduce((s,m) => s + m.amount, 0);
+  const saving = income - expenses;
+  const available = saving;
+
+  document.getElementById('incomeAmount').textContent = euro.format(income);
+  document.getElementById('expenseAmount').textContent = euro.format(expenses);
+  document.getElementById('savingAmount').textContent = euro.format(saving);
+  document.getElementById('availableAmount').textContent = euro.format(available);
+
+  renderGoal('space', 'space');
+  renderGoal('travel', 'travel');
+  renderMovements(monthMoves.slice().reverse().slice(0, 6));
+}
+
+function renderGoal(key, prefix){
+  const goal = config.goals[key];
+  const percent = goal.target ? Math.min(100, Math.round((goal.saved / goal.target) * 100)) : 0;
+  document.getElementById(prefix + 'Saved').textContent = euro.format(goal.saved);
+  document.getElementById(prefix + 'Goal').textContent = euro.format(goal.target);
+  document.getElementById(prefix + 'Percent').textContent = percent + '%';
+  document.getElementById(prefix + 'Bar').style.width = percent + '%';
+}
+
+function renderMovements(items){
+  const list = document.getElementById('movementList');
+  if(!items.length){
+    list.className = 'movement-list empty';
+    list.textContent = 'Sin movimientos todavía.';
+    return;
+  }
+  list.className = 'movement-list';
+  list.innerHTML = items.map(m => `
+    <div class="movement">
+      <div>
+        <h4>${escapeHtml(m.concept)}</h4>
+        <small>${escapeHtml(m.category)}</small>
+      </div>
+      <div class="amount ${m.type}">${m.type === 'expense' ? '−' : '+'}${euro.format(m.amount).replace('-', '')}</div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+const modal = document.getElementById('movementModal');
+document.getElementById('openModal').addEventListener('click', () => modal.showModal());
+document.getElementById('closeModal').addEventListener('click', () => modal.close());
+
+document.getElementById('movementForm').addEventListener('submit', () => {
+  const amount = Math.abs(Number(document.getElementById('amountInput').value));
+  const type = document.getElementById('typeInput').value;
+  const category = document.getElementById('categoryInput').value;
+  const concept = document.getElementById('conceptInput').value.trim();
+  if(!amount || !concept) return;
+  movements.push({ id: crypto.randomUUID(), amount, type, category, concept, date: new Date().toISOString() });
+  save();
+  render();
+  document.getElementById('movementForm').reset();
+});
+
+render();
